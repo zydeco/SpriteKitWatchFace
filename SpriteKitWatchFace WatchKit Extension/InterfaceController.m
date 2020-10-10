@@ -22,11 +22,14 @@
 -(id)timeLabel;
 -(id)layer;
 -(NSString*)timeText;
+-(id)sharedPUICApplication;
+-(void)_setStatusBarTimeHidden:(BOOL)hidden animated:(BOOL)animated completion:(void (^)(void))completion;
 @end
 
 @implementation InterfaceController
 
 + (void)load {
+    /* Hide time label on watchOS 4 and 6 */
     Class CLKTimeFormatter = NSClassFromString(@"CLKTimeFormatter");
     if ([CLKTimeFormatter instancesRespondToSelector:@selector(timeText)]) {
         Method m = class_getInstanceMethod(CLKTimeFormatter, @selector(timeText));
@@ -52,7 +55,7 @@
 
 - (void)didAppear
 {
-	/* Hack to make the digital time overlay disappear */
+	/* Hack to make the digital time overlay disappear (watchOS 5) */
 	
 	NSArray *views = [[[[[[[NSClassFromString(@"UIApplication") sharedApplication] keyWindow] rootViewController] viewControllers] firstObject] view] subviews];
 	
@@ -62,6 +65,13 @@
 			[[[view timeLabel] layer] setOpacity:0];
 	}
 	
+    /* Hack to make the digital time overlay disappear (watchOS 7) */
+    
+    Class PUICApplication = NSClassFromString(@"PUICApplication");
+    if ([PUICApplication instancesRespondToSelector:@selector(_setStatusBarTimeHidden:animated:completion:)]) {
+        [[PUICApplication sharedApplication] _setStatusBarTimeHidden:YES animated:NO completion:nil];
+    }
+    
 	self.crownSequencer.delegate = self;
 	[self.crownSequencer focus];
 }
